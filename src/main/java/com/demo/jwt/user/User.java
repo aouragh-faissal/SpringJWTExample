@@ -26,7 +26,8 @@ import lombok.NoArgsConstructor;
 @Table(name = "_user")
 public class User implements UserDetails{
 
-  @Id
+
+@Id
   @GeneratedValue
   private Integer id;
   private String firstname;
