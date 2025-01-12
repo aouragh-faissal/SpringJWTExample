@@ -7,11 +7,13 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import com.demo.jwt.config.JwtService;
+import com.demo.jwt.token.Token;
+import com.demo.jwt.token.TokenRepository;
+import com.demo.jwt.token.TokenType;
 import com.demo.jwt.user.Role;
 //import com.demo.jwt.token.Token;
 import com.demo.jwt.user.User;
 import com.demo.jwt.user.UserRepository;
-
 
 import lombok.RequiredArgsConstructor;
 
@@ -19,7 +21,7 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class AuthenticationService {
   private final UserRepository repository;
-  //private final TokenRepository tokenRepository;
+  private final TokenRepository tokenRepository;
   private final PasswordEncoder passwordEncoder;
   private final JwtService jwtService;
   private final AuthenticationManager authenticationManager;
@@ -32,8 +34,9 @@ public class AuthenticationService {
         .password(passwordEncoder.encode(request.getPassword()))
         .role(Role.USER)
         .build();
-        repository.save(user);
+    var savedUser = repository.save(user);
     var jwtToken = jwtService.generateToken(user);
+    saveUserToken(savedUser, jwtToken);
     return AuthenticationResponse.builder()
         .accessToken(jwtToken)
         .build();
@@ -49,12 +52,14 @@ public class AuthenticationService {
     var user = repository.findByEmail(request.getEmail())
         .orElseThrow();
     var jwtToken = jwtService.generateToken(user);
+    revokeAllUserTokens(user);
+    saveUserToken(user, jwtToken);
     return AuthenticationResponse.builder()
         .accessToken(jwtToken)
         .build();
   }
   
-  /*
+ 
 
   private void saveUserToken(User user, String jwtToken) {
     var token = Token.builder()
@@ -78,6 +83,7 @@ public class AuthenticationService {
     tokenRepository.saveAll(validUserTokens);
   }
 
+/*
   public void refreshToken(
           HttpServletRequest request,
           HttpServletResponse response
