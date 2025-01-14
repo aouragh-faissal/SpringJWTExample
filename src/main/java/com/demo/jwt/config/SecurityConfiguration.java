@@ -15,11 +15,39 @@ import org.springframework.security.web.authentication.logout.LogoutHandler;
 
 import lombok.RequiredArgsConstructor;
 
+import static org.springframework.http.HttpMethod.DELETE;
+import static org.springframework.http.HttpMethod.GET;
+import static org.springframework.http.HttpMethod.POST;
+import static org.springframework.http.HttpMethod.PUT;
+
+import static com.demo.jwt.user.Role.ADMIN;
+import static com.demo.jwt.user.Role.MANAGER;
+import static com.demo.jwt.user.Permission.ADMIN_CREATE;
+import static com.demo.jwt.user.Permission.ADMIN_DELETE;
+import static com.demo.jwt.user.Permission.ADMIN_READ;
+import static com.demo.jwt.user.Permission.ADMIN_UPDATE;
+import static com.demo.jwt.user.Permission.MANAGER_CREATE;
+import static com.demo.jwt.user.Permission.MANAGER_DELETE;
+import static com.demo.jwt.user.Permission.MANAGER_READ;
+import static com.demo.jwt.user.Permission.MANAGER_UPDATE;
+
 @Configuration
 @EnableWebSecurity
 @RequiredArgsConstructor
 @EnableMethodSecurity
 public class SecurityConfiguration {
+	
+    private static final String[] WHITE_LIST_URL = {"/api/v1/auth/**",
+            "/v2/api-docs",
+            "/v3/api-docs",
+            "/v3/api-docs/**",
+            "/swagger-resources",
+            "/swagger-resources/**",
+            "/configuration/ui",
+            "/configuration/security",
+            "/swagger-ui/**",
+            "/webjars/**",
+            "/swagger-ui.html"};
 
 
     private final JwtAuthenticationFilter jwtAuthFilter;
@@ -32,8 +60,21 @@ public class SecurityConfiguration {
                 .csrf((csrf) -> csrf.disable())
                 .authorizeHttpRequests(
                 		(req) ->  req
-                .requestMatchers("/api/v1/auth/**")
+                .requestMatchers(WHITE_LIST_URL)
                 .permitAll()
+                
+                .requestMatchers("/api/v1/management/**").hasAnyRole(ADMIN.name(), MANAGER.name())
+                .requestMatchers(GET, "/api/v1/management/**").hasAnyAuthority(ADMIN_READ.name(), MANAGER_READ.name())
+                .requestMatchers(POST, "/api/v1/management/**").hasAnyAuthority(ADMIN_CREATE.name(), MANAGER_CREATE.name())
+                .requestMatchers(PUT, "/api/v1/management/**").hasAnyAuthority(ADMIN_UPDATE.name(), MANAGER_UPDATE.name())
+                .requestMatchers(DELETE, "/api/v1/management/**").hasAnyAuthority(ADMIN_DELETE.name(), MANAGER_DELETE.name()) 
+                /*
+                .requestMatchers("/api/v1/admin/**").hasRole(ADMIN.name())
+                .requestMatchers(GET, "/api/v1/admin/**").hasAuthority(ADMIN_READ.name())
+                .requestMatchers(POST, "/api/v1/admin/**").hasAuthority(ADMIN_CREATE.name())
+                .requestMatchers(PUT, "/api/v1/admin/**").hasAuthority(ADMIN_UPDATE.name())
+                .requestMatchers(DELETE, "/api/v1/admin/**").hasAuthority(ADMIN_DELETE.name()) 
+                */
                 .anyRequest()
                 .authenticated()
                 )
